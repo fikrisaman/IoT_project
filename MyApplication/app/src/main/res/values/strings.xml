@@ -1,0 +1,27 @@
+<resources>
+    <string name="app_name">My Application</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="nav_header_title">Android Studio</string>
+    <string name="nav_header_subtitle">android.studio@android.com</string>
+    <string name="nav_header_desc">Navigation header</string>
+    <string name="action_settings">Settings</string>
+    <string name="video_description">Sample Video Stream</string>
+    <string name="menu_home">Home</string>
+    <string name="menu_gallery">Chart</string>
+    <string name="menu_slideshow">Camera</string>
+    <string name="menu_tools">TEST MENU</string>
+    <string name="menu_share">Share</string>
+    <string name="forward">^</string>
+    <string name="stop">Stop</string>
+    <string name="left">&lt;</string>
+    <string name="right">&gt;</string>
+    <string name="txtMqtt">MQTT BROKER</string>
+    <string name="txtUser">Username</string>
+    <string name="txtPasswd">Password</string>
+    <string name="login">Login</string>
+
+
+    <string name="media_url_mp4">https://storage.googleapis.com/exoplayer-test-media-0/BigBuckBunny_320x180.mp4</string>
+    <string name="menu_send">Send</string>
+</resources>
