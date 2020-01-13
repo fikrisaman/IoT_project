@@ -20,6 +20,7 @@
     <string name="txtUser">Username</string>
     <string name="txtPasswd">Password</string>
     <string name="login">Login</string>
+    <string name="flash">Flash</string>
 
 
     <string name="media_url_mp4">https://storage.googleapis.com/exoplayer-test-media-0/BigBuckBunny_320x180.mp4</string>

@@ -10,10 +10,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CompoundButton;
+import android.widget.ImageView;
 import android.widget.Switch;
 import android.util.Log;
+import android.util.Base64;
 import android.widget.Toast;
-
+import android.graphics.BitmapFactory;
 import androidx.annotation.Nullable;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
@@ -47,21 +49,18 @@ import java.util.Objects;
 public class SlideshowFragment extends Fragment implements View.OnClickListener{
 
     private SlideshowViewModel slideshowViewModel;
-    private PlayerView playerView;
-    private SimpleExoPlayer player;
+    String payload;
+    JSONObject jsonMsg;
     private Button left;
     private Button right;
     private Button forward;
     private Button stop;
     private Switch auto;
-    private boolean playWhenReady = true;
-    private int currentWindow = 0;
-    private long playbackPosition = 0;
+    private Switch flash;
+    private ImageView image;
+
     private MqttHelp mqttHelp;
-    private Timeline.Period mPeriod = new Period();
-    private static final String DEFAULT_STREAM_URL =
-            "https://storage.googleapis.com/testtopbox-public/video_content/bbb/master.m3u8";
-    private static final String APP_LOG_TAG = "ImaDaiExample";
+
 
 
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -74,26 +73,67 @@ public class SlideshowFragment extends Fragment implements View.OnClickListener{
         right = (Button) root.findViewById(R.id.right);
         left = (Button) root.findViewById(R.id.left);
         auto = (Switch) root.findViewById(R.id.auto);
+        flash = (Switch) root.findViewById(R.id.flash);
+        image = (ImageView) root.findViewById(R.id.imageView);
         forward.setOnClickListener(this);
         left.setOnClickListener(this);
         right.setOnClickListener(this);
         stop.setOnClickListener(this);
+        flash.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if(isChecked){
+                    Log.d("MQTT","flash 1");
+                    mqttHelp.publish("robot/move","flash 1");
+                }
+                else {
+                    Log.d("MQTT","flash 0");
+                    mqttHelp.publish("robot/move","flash 0");
+
+                }
+            }
+        });
         auto.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if(isChecked){
                     Log.d("MQTT","check");
-                    mqttHelp.publish("robot/move","Mode : 0");
+                    mqttHelp.publish("robot/move","manuel 1");
                 }
                 else {
                     Log.d("MQTT","uncheck");
-                    mqttHelp.publish("robot/move","Mode : 1");
+                    mqttHelp.publish("robot/move","manuel 0");
 
                 }
             }
         });
         mqttHelp = ((MainActivity)getContext()).getMQTT();
-        //mqttHelp.Subscribe("move/+",0);
+        mqttHelp.Subscribe("sensor/+",0);
+        mqttHelp.setCallback(new MqttCallbackExtended() {
+            @Override
+            public void connectComplete(boolean b, String s) {
+
+            }
+
+            @Override
+            public void connectionLost(Throwable throwable) {
+
+            }
+
+            @Override
+            public void messageArrived(String topic, MqttMessage mqttMessage) throws Exception {
+                payload = new String(mqttMessage.getPayload());
+                jsonMsg = new JSONObject(payload);
+                byte[] decodedString = Base64.decode(jsonMsg.getString("image"), Base64.DEFAULT);
+                image.setImageBitmap(BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length));
+
+            }
+
+            @Override
+            public void deliveryComplete(IMqttDeliveryToken iMqttDeliveryToken) {
+
+            }
+        });
 
         return root;
     }
@@ -103,15 +143,15 @@ public class SlideshowFragment extends Fragment implements View.OnClickListener{
         switch(v.getId()){
             case R.id.forward:
                 Log.d("MQTT","forward");
-                mqttHelp.publish("robot/move","Move : 1");
+                mqttHelp.publish("robot/move","Move 1");
                 break;
             case R.id.left:
                 Log.d("MQTT","left");
-                mqttHelp.publish("robot/move","Move : 3");
+                mqttHelp.publish("robot/move","Move 3");
                 break;
             case R.id.right:
                 Log.d("MQTT","right");
-                mqttHelp.publish("robot/move","Move : 2");
+                mqttHelp.publish("robot/move","Move 2");
                 break;
             case R.id.stop:
                 Log.d("MQTT","stop");
@@ -123,100 +163,16 @@ public class SlideshowFragment extends Fragment implements View.OnClickListener{
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        playerView = Objects.requireNonNull(getActivity()).findViewById(R.id.video_view);
+
 
     }
 
-    private void initializePlayer() {
-        DefaultTrackSelector trackSelector = new DefaultTrackSelector();
-        DefaultTrackSelector.Parameters params =
-                new DefaultTrackSelector.ParametersBuilder().setPreferredTextLanguage("en").build();
-        trackSelector.setParameters(params);
-
-        player = ExoPlayerFactory.newSimpleInstance(getContext(),
-                trackSelector, new DefaultLoadControl());
-        playerView.setPlayer(player);
-        Uri uri = Uri.parse("https://mnmedias.api.telequebec.tv/m3u8/29880.m3u8");
-        MediaSource mediaSource = buildMediaSource(uri);
-        player.setPlayWhenReady(playWhenReady);
-        player.seekTo(currentWindow, playbackPosition);
-        player.prepare(mediaSource, false, false);
-    }
-
-    private MediaSource buildMediaSource(Uri uri) {
-        DataSource.Factory dataSourceFactory = new DefaultDataSourceFactory(getContext(), "exoplayer-codelab");
-        int type = Util.inferContentType(uri, null);
-        MediaSource mediaSource = new HlsMediaSource.Factory(dataSourceFactory).createMediaSource(uri);
-        return mediaSource;
-    }
-    @Override
-    public void onStart() {
-        super.onStart();
-        if (Util.SDK_INT >= 24) {
-            initializePlayer();
-        }
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        hideSystemUi();
-        if ((Util.SDK_INT < 24 || player == null)) {
-            initializePlayer();
-        }
-    }
-
-
-    @SuppressLint("InlinedApi")
-    private void hideSystemUi() {
-        playerView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LOW_PROFILE
-                | View.SYSTEM_UI_FLAG_FULLSCREEN
-                | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        if (Util.SDK_INT < 24) {
-            releasePlayer();
-        }
-    }
 
     @Override
     public void onStop() {
         super.onStop();
-        if (Util.SDK_INT >= 24) {
-            releasePlayer();
-        }
+
         auto.setChecked(true);
     }
 
-    private void releasePlayer() {
-        if (player != null) {
-            playWhenReady = player.getPlayWhenReady();
-            playbackPosition = player.getCurrentPosition();
-            currentWindow = player.getCurrentWindowIndex();
-            player.release();
-            player = null;
-        }
-    }
-
-    public long getCurrentPositionPeriod() {
-        // Adjust position to be relative to start of period rather than window, to account for DVR
-        // window.
-        long position = player.getCurrentPosition();
-        Timeline currentTimeline = player.getCurrentTimeline();
-        if (!currentTimeline.isEmpty()) {
-            position -= currentTimeline.getPeriod(player.getCurrentPeriodIndex(), mPeriod)
-                    .getPositionInWindowMs();
-        }
-        return position;
-    }
-
-    public long getDuration() {
-        return player.getDuration();
-    }
     }

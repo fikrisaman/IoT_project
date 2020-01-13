@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="gaz_array">
+        <item>Smoke</item>
+        <item>LPG</item>
+        <item>CO</item>
+    </string-array>
+    <string-array name="alcool_array">
+        <item>Hydrogen</item>
+        <item>Ethanol</item>
+        <item>Butane</item>
+    </string-array>
+</resources>
