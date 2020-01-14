@@ -60,19 +60,18 @@ def convertSmoke(ratioGaz):
 
 def on_message_msgs(client, userdata, message):
     global move, flash, manuel
+    number = 0
     print("message received ", str(message.payload.decode("utf-8")))
     msg = str(message.payload.decode("utf-8")).split(" ")
     if msg[0] == "manuel":
         manuel = int(msg[1])
-    if msg[0] == "flash":
+    elif msg[0] == "flash":
         flash = int(msg[1])
-    if msg[0] == "move":
+        number = 8 + flash
+    elif msg[0] == "move" and manuel == 1:
         move = int(msg[1])
-    if manuel == 0:
-        move=0
-
-    command = 8*flash + 4*manuel + move
-    ser.write(str(command).encode())
+        number = 3 + move
+    ser.write(str(number).encode())
 
 
 mqttc = mqtt.Client("client1", clean_session=False)
